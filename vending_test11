@@ -1,0 +1,45 @@
+class config_random_test extends uvm_test;
+  `uvm_component_utils(config_random_test)
+
+  vending_env env;
+  virtual ctrl_if vif;
+  cfg_sequence base_cfg_seq;
+  config_partial_items_seq partial_seq;
+  config_random_no_of_items_seq rand_no_seq;
+  config_randomized_with_interleaved_read_seq interleaved_seq;
+
+  function new(string name, uvm_component parent);
+    super.new(name, parent);
+  endfunction
+
+  function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+    env = vending_env::type_id::create("env", this);
+      if (!uvm_config_db#(virtual ctrl_if)::get(this, "", "ctrl_vif", vif))
+        `uvm_fatal("test11", "Virtual interface not found")
+  endfunction
+
+  task run_phase(uvm_phase phase);
+    phase.raise_objection(this);
+    
+    vif.cfg_mode =1;
+
+  //  `uvm_info("CONFIG_RANDOM_TEST", "Starting base configuration sequence...", UVM_LOW)
+    //base_cfg_seq = cfg_sequence::type_id::create("base_cfg_seq");
+    //base_cfg_seq.start(env.cfg_ag.seqr);
+
+    `uvm_info("CONFIG_RANDOM_TEST", "Running partial item configuration", UVM_LOW)
+    partial_seq = config_partial_items_seq::type_id::create("partial_seq");
+    partial_seq.start(env.cfg_ag.seqr);
+
+    `uvm_info("CONFIG_RANDOM_TEST", "Running randomized number of items config", UVM_LOW)
+    rand_no_seq = config_random_no_of_items_seq::type_id::create("rand_no_seq");
+    rand_no_seq.start(env.cfg_ag.seqr);
+
+    `uvm_info("CONFIG_RANDOM_TEST", "Running interleaved read/write sequence", UVM_LOW)
+    interleaved_seq = config_randomized_with_interleaved_read_seq::type_id::create("interleaved_seq");
+    interleaved_seq.start(env.cfg_ag.seqr);
+
+    phase.drop_objection(this);
+  endtask
+endclass
