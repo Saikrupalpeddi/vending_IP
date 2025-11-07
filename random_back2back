@@ -1,0 +1,44 @@
+class item_seq_randomized_back_to_back_operations extends uvm_sequence #(item_transaction);
+  `uvm_object_utils(item_seq_randomized_back_to_back_operations)
+
+  function new(string name = "item_seq_randomized_back_to_back_operations");
+    super.new(name);
+  endfunction
+
+  task body();
+    item_transaction item_tx;
+
+    repeat(6) begin
+      item_tx = item_transaction::type_id::create("item_tx_%0d");
+      start_item(item_tx);
+      item_tx.item_select = 30; 
+      item_tx.item_select_valid = 1;
+      finish_item(item_tx);
+      #50;
+    end
+
+    `uvm_info("ITEM_BACK2BACK_SEQ", "Sent 6 random item selects.", UVM_MEDIUM);
+  endtask
+endclass
+
+class currency_seq_randomized_back_to_back_operations extends uvm_sequence #(currency_transaction);
+  `uvm_object_utils(currency_seq_randomized_back_to_back_operations)
+
+  function new(string name = "currency_seq_randomized_back_to_back_operations");
+    super.new(name);
+  endfunction
+
+  task body();
+ currency_transaction curr_tx;
+    repeat(6) begin
+      curr_tx = currency_transaction::type_id::create("curr_tx_%0d");
+      start_item(curr_tx);
+      curr_tx.currency_value = 50;  
+      curr_tx.currency_valid = 1;
+      finish_item(curr_tx);
+      #50;
+    end
+
+    `uvm_info("CURRENCY_BACK2BACK_SEQ", "Sent 6 back-to-back currency values.", UVM_MEDIUM);
+  endtask
+endclass
