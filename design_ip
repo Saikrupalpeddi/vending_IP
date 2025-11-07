@@ -1,0 +1,213 @@
+module cfg_ctrl #(parameter MAX_ITEMS = 32) (
+//APB Interface
+input         pclk,
+input  [15:0] paddr,
+input         prstn,
+input  [31:0] pwdata,
+output [31:0] prdata,
+input         pwrite,
+input         psel,
+input [$clog2(MAX_ITEMS)-1 : 0] get_me_item_cfg,
+output [31:0] current_item_cfg,
+input update_vld,
+input [$clog2(MAX_ITEMS)-1 : 0] update_item_no
+
+);
+
+reg [31:0] prdata_r;
+reg [31:0] current_item_cfg_r;
+reg [31:0] vending_machine_cfg;
+reg [31:0] item_cfg[MAX_ITEMS];
+
+assign prdata = prdata_r;
+assign current_item_cfg = current_item_cfg_r;
+
+always @(posedge pclk or negedge prstn) begin
+  if (!prstn) begin
+    for (int i =0; i<MAX_ITEMS; i++) begin
+      item_cfg[i] <= 32'h0;
+    end
+  end
+  else begin
+   // $display("............................pwdata =  %d.......",pwdata[23:16]);
+    //$display("............................psel =  %d....pwrite=%d...paddr=%h",psel,pwrite,paddr);
+    
+    if (psel & pwrite) begin
+      if (paddr[15:12] != 0) begin
+        vending_machine_cfg <= pwdata;
+      end
+      else begin
+        item_cfg[paddr[11:0]] <= pwdata;
+ //    //   $display("item_cfg=%d...%d...%d",item_cfg[paddr[11:0]][31:17],item_cfg[paddr[11:0]][23:16],item_cfg[paddr[11:0]][15:0]);
+      //  for(int j =0;j<32;j=j+1)  begin 
+          //$display("item_cfg[%d]=%d....%d",j,item_cfg[j],paddr);
+//end
+      end
+    end
+    if (psel) begin
+      if (paddr[15:12] != 0) begin
+        prdata_r <= vending_machine_cfg;
+      end
+      else begin
+        prdata_r <= item_cfg[paddr[11:0]];
+   //     $display("prdata = %d,passr=%d",item_cfg[paddr[11:0]],paddr);
+      end
+    end
+  end
+end
+integer i;
+always @(*) begin
+  current_item_cfg_r = item_cfg[get_me_item_cfg];
+end
+
+always @(*) begin
+  if (update_vld) begin
+    item_cfg[update_item_no][23:16] -= 1; //Decrement no of available
+    item_cfg[update_item_no][31:24] += 1; //Increment no of dispensed
+  end
+end
+endmodule // cfg_ctrl
+
+module posedge_det (input clk, input rstn, input sig, output posedge_sig);
+  reg sig_r;
+
+  always @(posedge clk or negedge rstn) begin
+    if (!rstn) begin
+      sig_r <= 1'b0;
+    end
+    else begin
+      sig_r <= sig;
+    end
+  end
+  assign posedge_sig = !sig_r & sig;
+ 
+endmodule 
+
+
+module vending_machine #(
+parameter MAX_ITEMS = 32,
+parameter MAX_NOTE_VAL = 100
+)
+(
+
+//General interface
+input clk,
+input rstn,
+input cfg_mode,
+
+//APB Interface
+input         pclk,
+input         prstn,
+input  [15:0] paddr,
+input         psel,
+input         pwrite,
+input  [31:0] pwdata,
+output [31:0] prdata,
+output        pready,
+
+//Coin or Note interface
+input currency_valid,
+input [$clog2(MAX_NOTE_VAL) : 0] currency_value,
+
+//Item Select Interface
+input item_select_valid,
+input [$clog2(MAX_ITEMS)-1 : 0] item_select,
+
+//Ouput interface
+output item_dispense_valid,
+output [$clog2(MAX_ITEMS)-1 : 0] item_dispense,
+output [15:0] currency_change
+);
+
+reg [$clog2(MAX_ITEMS)-1 : 0] current_item_code;
+reg [31:0] current_item_cfg;
+reg o_valid_r;
+reg [$clog2(MAX_ITEMS)-1 : 0] out_item_r;
+reg [15:0] count_notes;
+reg [15:0] note_change_r;
+reg item_vld_posedge;
+
+//assign currency_change = note_change_r;
+
+//Capture Item no for current item
+posedge_det item_posedge (clk, rstn, item_select_valid, item_vld_posedge);
+
+always @(posedge clk or negedge rstn) begin
+    if (!rstn) begin
+      current_item_code <= 'h0;
+    end
+    else if (item_vld_posedge) begin
+      current_item_code = item_select;
+
+    end
+      //  $display(".........current_item= %d.........",current_item_code);
+end
+
+cfg_ctrl #(.MAX_ITEMS(MAX_ITEMS)) u_cfg_ctrl (
+  .pclk    (pclk  ),
+  .paddr   (paddr ),
+  .prstn   (prstn ),
+  .pwdata  (pwdata),
+  .prdata  (prdata),
+  .pwrite  (pwrite && cfg_mode),
+  .psel    (psel),
+  .get_me_item_cfg  (current_item_code),
+  .current_item_cfg (current_item_cfg),
+  .update_vld       (o_valid_r),
+  .update_item_no   (out_item_r)
+
+);
+
+assign item_dispense_valid     = o_valid_r;
+assign item_dispense           = out_item_r;
+assign currency_change         = note_change_r;
+
+// Ctrl 
+always @(posedge clk or negedge rstn) begin
+  if (!rstn) begin
+    o_valid_r     <= 'b0;
+    out_item_r    <= 'h0;
+    note_change_r <= 'h0;
+    count_notes   <= 'h0;
+    //$display("Applied reset");
+  end
+  else begin
+   // $display(".........currency_valid= %d..currency=%d..current_item = %d ",currency_valid,currency_value,current_item_cfg[23:16]);
+    
+    if (currency_valid & (current_item_cfg[23:16] != 0)) begin //Ctrl logic should start
+    //only when there is a valid input and current item is available
+      
+     //         $display("............................................value= %d..................",current_item_cfg[15:0]);
+       // $display("............................................currency_value= %d..................",currency_value);
+      if (count_notes + currency_value >= current_item_cfg[15:0]) begin
+    //When the sofar count of money including current note is sufficient i.e
+    //equal or greater than the item value then issue the item
+        o_valid_r     <= 1'b1;
+        out_item_r    <= current_item_code;
+        note_change_r <= count_notes + currency_value - current_item_cfg[15:0];
+        count_notes  <= 'h0;
+        //$display("............................................value= %d..................",current_item_cfg[15:0]);
+        //$display("............................................currency_value= %d..................",currency_value);
+      end
+      else begin
+      // Make sure we nullify item_dispense_valid and all outputs
+        o_valid_r     <= 'b0;
+        out_item_r    <= 'h0;
+        note_change_r <= 'h0;
+        count_notes   <= count_notes + currency_value;
+        //$display("............................................count_notes= %d..................",count_notes);
+      end
+    end // The ctrl logic if 
+    else if (!currency_valid) begin
+      //Make sure oututs are nullified within a clk
+      //Also pay attention not to clear the counter
+      //So that we allow customer to input notes with bigger gap
+        o_valid_r     <= 'b0;
+        out_item_r    <= 'h0;
+        note_change_r <= 'h0;
+      //$display("............................................currency not valid..................",);
+      
+    end
+  end
+end
+endmodule
