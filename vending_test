@@ -1,0 +1,87 @@
+`include "uvm_macros.svh"
+import uvm_pkg::*;
+`include "tb_includes.sv"
+
+module top;
+  
+  logic clk = 0;
+  always #5 clk = ~clk;
+
+  logic pclk = 0;
+  always #5 pclk = ~pclk;
+
+  checker_if     checker_vif(clk);
+  ctrl_if        ctrl_vif(clk);
+  cfg_if         cfg_vif(pclk);
+  currency_if    currency_vif(clk);
+  item_select_if #(.MAX_ITEMS(MAX_ITEMS)) item_vif(clk);
+  dispense_if #(.MAX_ITEMS(MAX_ITEMS))   dispense_vif(clk);
+  
+  vending_machine #(.MAX_ITEMS(MAX_ITEMS), .MAX_NOTE_VAL(100)) dut (
+    .clk(clk),
+    .rstn(ctrl_vif.rstn),
+    .cfg_mode(ctrl_vif.cfg_mode),
+
+    .pclk(pclk),
+    .prstn(cfg_vif.prstn),
+    .paddr(cfg_vif.paddr),
+    .psel(cfg_vif.psel),
+    .pwrite(cfg_vif.pwrite),
+    .pwdata(cfg_vif.pwdata),
+    .prdata(cfg_vif.prdata),
+    .pready(),
+
+    .currency_valid(currency_vif.currency_valid),
+    .currency_value(currency_vif.currency_value),
+
+    .item_select_valid(item_vif.item_select_valid),
+    .item_select(item_vif.item_select),
+
+    .item_dispense_valid(dispense_vif.item_dispense_valid),
+    .item_dispense(dispense_vif.item_dispense),
+    .currency_change(dispense_vif.currency_change)
+  );
+
+  assign cfg_vif.pready = 1'b1;
+ assign cfg_vif.prstn = ctrl_vif.rstn; 
+  
+  initial begin
+    uvm_config_db#(int)::set(null, "*", "max_items", MAX_ITEMS);
+    uvm_config_db #(virtual checker_if)   ::set(null, "*", "checker_vif", checker_vif);
+    uvm_config_db #(virtual ctrl_if)       ::set(null, "*", "ctrl_vif", ctrl_vif);
+    uvm_config_db #(virtual cfg_if)        ::set(null, "*", "cfg_vif", cfg_vif);
+    uvm_config_db #(virtual currency_if)   ::set(null, "*", "currency_vif", currency_vif);
+    uvm_config_db #(virtual item_select_if #(MAX_ITEMS) )::set(null, "*", "item_vif", item_vif);
+    uvm_config_db #(virtual dispense_if #(MAX_ITEMS))   ::set(null, "*", "dispense_vif", dispense_vif);
+    
+
+     
+    
+    
+
+     
+//    run_test("vending_test"); 			//	vending test1
+//         run_test("reset_mode_test"); 		// 	vending_test2 
+//         run_test("config_mode_test");		// 	vending_test3 
+//     run_test("error_operation_test");	 	//	vending_test4
+//     run_test("latency_output_test"); 	//	vending_test5
+   // run_test("operation_random_test");	//	vending_test6
+//     run_test("operation_basic_test"); 	//	vending_test7
+//      run_test("config_negative_test");  	//	vending_test8
+//     run_test("config_full_test"); 	    //	vending_test9
+     run_test("config_edge_test");		//	vending_test10
+//     run_test("config_random_test"); 		//	vending_test11
+//                run_test("vending_basic_rand_test");    // vending_test_12
+    
+    
+  $finish;
+  end
+  initial begin
+  $dumpfile ("vending_wave.vcd"); 
+    $dumpvars();
+    	ctrl_vif.rstn = 0;
+    #20 ctrl_vif.rstn = 1;
+
+ 
+end
+endmodule
