@@ -1,0 +1,22 @@
+class item_random_sequence extends uvm_sequence #(item_transaction);
+  `uvm_object_utils(item_random_sequence)
+
+  function new(string name = "item_random_sequence");
+    super.new(name);
+  endfunction
+
+  task body();
+    item_transaction req;
+    repeat (10) 
+      begin
+      req = item_transaction::type_id::create("req");
+      start_item(req);
+        assert(req.randomize() with {item_select inside {[1:10]};item_select_valid == 1;})
+        else
+       `uvm_error("ITEM_SEQ", "Randomization failed for item transaction")
+      finish_item(req);
+      `uvm_info("ITEM_SEQ", req.convert2string(), UVM_MEDIUM)
+        #150;
+      end
+  endtask
+endclass
