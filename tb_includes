@@ -1,0 +1,118 @@
+// UVM Base
+parameter MAX_ITEMS = 32;
+`include "uvm_macros.svh"
+
+// Interfaces
+`include "ctrl_if.sv"
+`include "cfg_if.sv"
+`include "currency_if.sv"
+`include "item_select_if.sv"
+`include "dispense_if.sv"
+`include "checker_if.sv"
+
+// Sequence Items
+
+`include "cfg_transaction.sv"
+`include "currency_transaction.sv"
+`include "item_transaction.sv"
+`include "dispense_transaction.sv"
+
+// Sequencers
+`include "cfg_sequencer.sv"
+`include "currency_sequencer.sv"
+`include "item_sequencer.sv"
+
+// Drivers
+`include "cfg_driver.sv"
+`include "currency_driver.sv"
+`include "item_driver.sv"
+
+// Monitors
+`include "cfg_monitor.sv"
+`include "currency_monitor.sv"
+`include "item_monitor.sv"
+`include "dispense_monitor.sv"
+
+// Sequences 
+`include "cfg_sequence.sv"
+`include "currency_sequence.sv"
+`include "item_sequence.sv"
+
+`include "reset_sequence.sv"
+`include "reset_check_sequence.sv"
+`include "config_write_sequence.sv"
+`include "config_read_sequence.sv"
+`include "config_total_items_sequence.sv"
+`include "invalid_item_select_sequence.sv"
+`include "unsupported_currency_sequence.sv"
+`include "currency_before_itm_sequence.sv"
+`include "currency_after_item_sequence.sv"
+`include "latency_check_sequence.sv"
+`include "single_per_transaction_seq.sv"
+`include "one_dispense_per_seq.sv"
+`include "random_vaild_multiitem_seq.sv"
+`include "random_usermix_sequence.sv"
+`include "random_back_toback_seq.sv"
+`include "exact_currency_sequence.sv"
+`include "overpayment_currency_sequence.sv"
+`include "config_invalid_address_seq.sv"
+`include "config_while_mode_test_seq.sv"
+`include "multi_item_currency_seq.sv"
+
+`include "config_multi_item_setup_seq.sv"
+`include "config_max_items_seq.sv"
+`include "config_max_items_readback_seq.sv"
+`include "config_check_default_reset_seq.sv"
+`include "config_clear_dispense_count_seq.sv"
+`include "config_randomized_item_Setup_seq.sv"
+`include "config_partial_items_seq.sv"
+`include "config_ran_noofitems_seq.sv"
+`include "config_random_with_interleaved_read_seq.sv"
+
+`include "currency_random_sequence.sv"
+`include "item_random_sequence.sv"
+`include "config_random_write_seq.sv"
+`include "config_random_read_seq.sv"
+`include "cfg_write_seq.sv"
+`include "zero_dispense_item_seq.sv"
+
+
+
+
+
+
+// Agents
+`include "cfg_agent.sv"
+`include "currency_agent.sv"
+`include "item_agent.sv"
+`include "dispense_agent.sv"
+
+
+ //checkers
+`include "ref_model.sv"
+`include "currency_checker.sv"
+`include "item_checker.sv"
+`include "apb_checker.sv"
+`include "dispense_checker.sv"
+
+`include "top_scoreboard.sv"
+`include "vending_scoreboard.sv"
+
+// Environment and Test
+`include "vending_env.sv"
+
+`include "vending_test.sv"
+`include "vending_test2.sv"
+`include "vending_test3.sv"
+`include "vending_test4.sv"
+`include "vending_test5.sv"
+`include "vending_test6.sv"
+`include "vending_test7.sv"
+`include "vending_test8.sv"
+`include "vending_test9.sv"
+`include "vending_test10.sv"
+`include "vending_test11.sv"
+
+`include "vending_test12.sv"
+
+
