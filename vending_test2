@@ -1,0 +1,67 @@
+class reset_mode_test extends uvm_test;
+  `uvm_component_utils(reset_mode_test)
+
+   virtual ctrl_if vif;
+  virtual cfg_if cfg_vif;
+  
+  reset_sequence rst_seq;
+  reset_register_check_seq reg_chk_seq;
+  vending_env env;
+ 
+ config_write_sequence cfg_write;
+
+  
+   function new(string name = "reset_mode_test", uvm_component parent = null);
+    super.new(name, parent);
+  endfunction
+
+      function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+    env = vending_env::type_id::create("env", this);
+    if (!uvm_config_db#(virtual ctrl_if)::get(this, "", "ctrl_vif", vif))
+      `uvm_fatal("CFG_DRIVER", "Virtual interface not found")
+  endfunction
+      
+      function void end_of_elaboration_phase (uvm_phase phase);
+uvm_top.print_topology ();
+endfunction
+  
+  task run_phase(uvm_phase phase);
+    phase.raise_objection(this);
+    
+   /* `uvm_info("Vending_Test", "Reset_check_sequence_started", UVM_LOW)
+    rst_seq = reset_sequence::type_id::create("rest_seq");
+    rst_seq.start(env.cfg_ag.seqr);
+    */
+    
+    vif.cfg_mode=1'b1;
+    `uvm_info("Vending_Test", "Started_Register_write_mode", UVM_LOW)
+    
+    //INVENTORY_CONFIGURATION
+                               
+    cfg_write = config_write_sequence::type_id::create("cfg_write");
+    cfg_write.start(env.cfg_ag.seqr);
+    
+    #10;  vif.cfg_mode=1'b0;
+        
+    `uvm_info("Vending_Test", "Reset_check_sequence_started", UVM_LOW)
+    
+    
+    // RESET_MODE ACTIVATED
+    
+   #100; vif.rstn=1'b0;
+    rst_seq = reset_sequence::type_id::create("rest_seq");
+    rst_seq.start(env.cfg_ag.seqr);
+    
+   #10; vif.rstn=1'b1; vif.cfg_mode=1'b1;
+    
+    // CHECKING INVENTORY AFTER RESET
+    reg_chk_seq = reset_register_check_seq::type_id::create("reg_chk_seq");
+    reg_chk_seq.start(env.cfg_ag.seqr);
+    #100;
+        `uvm_info("vending_test","Reset_mode_check_completed", UVM_LOW)
+    
+    phase.drop_objection(this);
+  endtask
+  
+endclass
